@@ -284,8 +284,8 @@ void queueLoadModule(sds path, sds *argv, int argc) {
     int i;
     struct moduleLoadQueueEntry *loadmod;
 
-    loadmod = zmalloc(sizeof(struct moduleLoadQueueEntry));
-    loadmod->argv = zmalloc(sizeof(robj*)*argc);
+    loadmod = zmalloc_dram(sizeof(struct moduleLoadQueueEntry));
+    loadmod->argv = zmalloc_dram(sizeof(robj*)*argc);
     loadmod->path = sdsnew(path);
     loadmod->argc = argc;
     for (i = 0; i < argc; i++) {
@@ -1048,7 +1048,7 @@ struct rewriteConfigState *rewriteConfigReadOldFile(char *path) {
 
     char buf[CONFIG_MAX_LINE+1];
     int linenum = -1;
-    struct rewriteConfigState *state = zmalloc(sizeof(*state));
+    struct rewriteConfigState *state = zmalloc_dram(sizeof(*state));
     state->option_to_line = dictCreate(&optionToLineDictType,NULL);
     state->rewritten = dictCreate(&optionSetDictType,NULL);
     state->numlines = 0;

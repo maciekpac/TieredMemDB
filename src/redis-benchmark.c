@@ -241,7 +241,7 @@ void _serverAssert(const char *estr, const char *file, int line) {
 static redisConfig *getRedisConfig(const char *ip, int port,
                                    const char *hostsocket)
 {
-    redisConfig *cfg = zcalloc(sizeof(*cfg));
+    redisConfig *cfg = zcalloc_dram(sizeof(*cfg));
     if (!cfg) return NULL;
     redisContext *c = NULL;
     redisReply *reply = NULL, *sub_reply = NULL;
@@ -585,7 +585,7 @@ static void writeHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
 static client createClient(char *cmd, size_t len, client from, int thread_id) {
     int j;
     int is_cluster_client = (config.cluster_mode && thread_id >= 0);
-    client c = zmalloc(sizeof(struct _client));
+    client c = zmalloc_dram(sizeof(struct _client));
 
     const char *ip = NULL;
     int port = 0;
@@ -683,7 +683,7 @@ static client createClient(char *cmd, size_t len, client from, int thread_id) {
         if (from) {
             c->randlen = from->randlen;
             c->randfree = 0;
-            c->randptr = zmalloc(sizeof(char*)*c->randlen);
+            c->randptr = zmalloc_dram(sizeof(char*)*c->randlen);
             /* copy the offsets. */
             for (j = 0; j < (int)c->randlen; j++) {
                 c->randptr[j] = c->obuf + (from->randptr[j]-from->obuf);
@@ -695,7 +695,7 @@ static client createClient(char *cmd, size_t len, client from, int thread_id) {
 
             c->randlen = 0;
             c->randfree = RANDPTR_INITIAL_SIZE;
-            c->randptr = zmalloc(sizeof(char*)*c->randfree);
+            c->randptr = zmalloc_dram(sizeof(char*)*c->randfree);
             while ((p = strstr(p,"__rand_int__")) != NULL) {
                 if (c->randfree == 0) {
                     c->randptr = zrealloc(c->randptr,sizeof(char*)*c->randlen*2);
@@ -712,7 +712,7 @@ static client createClient(char *cmd, size_t len, client from, int thread_id) {
         if (from) {
             c->staglen = from->staglen;
             c->stagfree = 0;
-            c->stagptr = zmalloc(sizeof(char*)*c->staglen);
+            c->stagptr = zmalloc_dram(sizeof(char*)*c->staglen);
             /* copy the offsets. */
             for (j = 0; j < (int)c->staglen; j++) {
                 c->stagptr[j] = c->obuf + (from->stagptr[j]-from->obuf);
@@ -724,7 +724,7 @@ static client createClient(char *cmd, size_t len, client from, int thread_id) {
 
             c->staglen = 0;
             c->stagfree = RANDPTR_INITIAL_SIZE;
-            c->stagptr = zmalloc(sizeof(char*)*c->stagfree);
+            c->stagptr = zmalloc_dram(sizeof(char*)*c->stagfree);
             while ((p = strstr(p,"{tag}")) != NULL) {
                 if (c->stagfree == 0) {
                     c->stagptr = zrealloc(c->stagptr,
@@ -851,7 +851,7 @@ static void showLatencyReport(void) {
 static void initBenchmarkThreads() {
     int i;
     if (config.threads) freeBenchmarkThreads();
-    config.threads = zmalloc(config.num_threads * sizeof(benchmarkThread*));
+    config.threads = zmalloc_dram(config.num_threads * sizeof(benchmarkThread*));
     for (i = 0; i < config.num_threads; i++) {
         benchmarkThread *thread = createBenchmarkThread(i);
         config.threads[i] = thread;
@@ -897,7 +897,7 @@ static void benchmark(char *title, char *cmd, int len) {
 /* Thread functions. */
 
 static benchmarkThread *createBenchmarkThread(int index) {
-    benchmarkThread *thread = zmalloc(sizeof(*thread));
+    benchmarkThread *thread = zmalloc_dram(sizeof(*thread));
     if (thread == NULL) return NULL;
     thread->index = index;
     thread->el = aeCreateEventLoop(1024*10);
@@ -929,7 +929,7 @@ static void *execBenchmarkThread(void *ptr) {
 /* Cluster helper functions. */
 
 static clusterNode *createClusterNode(char *ip, int port) {
-    clusterNode *node = zmalloc(sizeof(*node));
+    clusterNode *node = zmalloc_dram(sizeof(*node));
     if (!node) return NULL;
     node->ip = ip;
     node->port = port;
@@ -937,7 +937,7 @@ static clusterNode *createClusterNode(char *ip, int port) {
     node->flags = 0;
     node->replicate = NULL;
     node->replicas_count = 0;
-    node->slots = zmalloc(CLUSTER_SLOTS * sizeof(int));
+    node->slots = zmalloc_dram(CLUSTER_SLOTS * sizeof(int));
     node->slots_count = 0;
     node->current_slot_index = 0;
     node->updated_slots = NULL;
@@ -1243,7 +1243,7 @@ static int fetchClusterSlotsConfiguration(client c) {
         sdsfree(name);
         clusterNode *node = dictGetVal(entry);
         if (node->updated_slots == NULL)
-            node->updated_slots = zcalloc(CLUSTER_SLOTS * sizeof(int));
+            node->updated_slots = zcalloc_dram(CLUSTER_SLOTS * sizeof(int));
         for (slot = from; slot <= to; slot++)
             node->updated_slots[node->updated_slots_count++] = slot;
     }
@@ -1546,7 +1546,7 @@ int main(int argc, const char **argv) {
     argc -= i;
     argv += i;
 
-    config.latency = zmalloc(sizeof(long long)*config.requests);
+    config.latency = zmalloc_dram(sizeof(long long)*config.requests);
 
     if (config.cluster_mode) {
         /* Fetch cluster configuration. */
@@ -1641,7 +1641,7 @@ int main(int argc, const char **argv) {
     }
 
     /* Run default benchmark suite. */
-    data = zmalloc(config.datasize+1);
+    data = zmalloc_dram(config.datasize+1);
     do {
         genBenchmarkRandomData(data, config.datasize);
         data[config.datasize] = '\0';

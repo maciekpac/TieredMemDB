@@ -82,7 +82,7 @@ unsigned long listTypeLength(const robj *subject) {
 /* Initialize an iterator at the specified index. */
 listTypeIterator *listTypeInitIterator(robj *subject, long index,
                                        unsigned char direction) {
-    listTypeIterator *li = zmalloc(sizeof(listTypeIterator));
+    listTypeIterator *li = zmalloc_dram(sizeof(listTypeIterator));
     li->subject = subject;
     li->encoding = subject->encoding;
     li->direction = direction;

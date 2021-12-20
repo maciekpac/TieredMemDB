@@ -100,7 +100,7 @@ void _quicklistBookmarkDelete(quicklist *ql, quicklistBookmark *bm);
 quicklist *quicklistCreate(void) {
     struct quicklist *quicklist;
 
-    quicklist = zmalloc(sizeof(*quicklist));
+    quicklist = zmalloc_dram(sizeof(*quicklist));
     quicklist->head = quicklist->tail = NULL;
     quicklist->len = 0;
     quicklist->count = 0;
@@ -144,7 +144,7 @@ quicklist *quicklistNew(int fill, int compress) {
 
 REDIS_STATIC quicklistNode *quicklistCreateNode(void) {
     quicklistNode *node;
-    node = zmalloc(sizeof(*node));
+    node = zmalloc_dram(sizeof(*node));
     node->zl = NULL;
     node->count = 0;
     node->sz = 0;
@@ -192,7 +192,7 @@ REDIS_STATIC int __quicklistCompressNode(quicklistNode *node) {
     if (node->sz < MIN_COMPRESS_BYTES)
         return 0;
 
-    quicklistLZF *lzf = zmalloc(sizeof(*lzf) + node->sz);
+    quicklistLZF *lzf = zmalloc_dram(sizeof(*lzf) + node->sz);
 
     /* Cancel if compression fails or doesn't compress small enough */
     if (((lzf->sz = lzf_compress(node->zl, node->sz, lzf->compressed,
@@ -225,7 +225,7 @@ REDIS_STATIC int __quicklistDecompressNode(quicklistNode *node) {
     node->attempted_compress = 0;
 #endif
 
-    void *decompressed = zmalloc(node->sz);
+    void *decompressed = zmalloc_dram(node->sz);
     quicklistLZF *lzf = (quicklistLZF *)node->zl;
     if (lzf_decompress(lzf->compressed, lzf->sz, decompressed, node->sz) == 0) {
         /* Someone requested decompress, but we can't decompress.  Not good. */
@@ -816,7 +816,7 @@ REDIS_STATIC quicklistNode *_quicklistSplitNode(quicklistNode *node, int offset,
     size_t zl_sz = node->sz;
 
     quicklistNode *new_node = quicklistCreateNode();
-    new_node->zl = zmalloc(zl_sz);
+    new_node->zl = zmalloc_dram(zl_sz);
 
     /* Copy original ziplist so we can split it */
     memcpy(new_node->zl, node->zl, zl_sz);
@@ -1065,7 +1065,7 @@ int quicklistCompare(unsigned char *p1, unsigned char *p2, int p2_len) {
 quicklistIter *quicklistGetIterator(const quicklist *quicklist, int direction) {
     quicklistIter *iter;
 
-    iter = zmalloc(sizeof(*iter));
+    iter = zmalloc_dram(sizeof(*iter));
 
     if (direction == AL_START_HEAD) {
         iter->current = quicklist->head;
@@ -1212,10 +1212,10 @@ quicklist *quicklistDup(quicklist *orig) {
         if (current->encoding == QUICKLIST_NODE_ENCODING_LZF) {
             quicklistLZF *lzf = (quicklistLZF *)current->zl;
             size_t lzf_sz = sizeof(*lzf) + lzf->sz;
-            node->zl = zmalloc(lzf_sz);
+            node->zl = zmalloc_dram(lzf_sz);
             memcpy(node->zl, current->zl, lzf_sz);
         } else if (current->encoding == QUICKLIST_NODE_ENCODING_RAW) {
-            node->zl = zmalloc(current->sz);
+            node->zl = zmalloc_dram(current->sz);
             memcpy(node->zl, current->zl, current->sz);
         }
 
@@ -1389,7 +1389,7 @@ int quicklistPopCustom(quicklist *quicklist, int where, unsigned char **data,
 REDIS_STATIC void *_quicklistSaver(unsigned char *data, unsigned int sz) {
     unsigned char *vstr;
     if (data) {
-        vstr = zmalloc(sz);
+        vstr = zmalloc_dram(sz);
         memcpy(vstr, data, sz);
         return vstr;
     }

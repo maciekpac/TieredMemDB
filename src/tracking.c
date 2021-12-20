@@ -106,7 +106,7 @@ void enableBcastTrackingForPrefix(client *c, char *prefix, size_t plen) {
     /* If this is the first client subscribing to such prefix, create
      * the prefix in the table. */
     if (bs == raxNotFound) {
-        bs = zmalloc(sizeof(*bs));
+        bs = zmalloc_dram(sizeof(*bs));
         bs->keys = raxNew();
         bs->clients = raxNew();
         raxInsert(PrefixTable,(unsigned char*)prefix,plen,bs,NULL);
