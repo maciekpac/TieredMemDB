@@ -47,6 +47,8 @@ void zlibc_free(void *ptr) {
 #include "zmalloc.h"
 #include "atomicvar.h"
 
+#include "backtrace_tracker.h"
+
 #ifdef HAVE_MALLOC_SIZE
 #define PREFIX_SIZE (0)
 #else
@@ -327,7 +329,20 @@ void zmalloc_set_pmem_variant_multiple_mode(void) {
 }
 #endif // USE_MEMKIND
 
+#include "stdbool.h"
+
+#define TRACK_HIGHEST_ALLOCATIONS 0
+
 void *zmalloc(size_t size) {
+#if TRACK_HIGHEST_ALLOCATIONS
+    static tracker_handle *handle = NULL;
+    static bool initialized=false;
+    if (!initialized) {
+        handle = tracker_create();
+        initialized = true;
+    }
+    tracker_add(handle, size);
+#endif
     return (size < pmem_threshold) ? zmalloc_dram(size) : zmalloc_pmem(size);
 }
 
