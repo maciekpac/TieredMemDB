@@ -4,6 +4,9 @@
 
 #include <string>
 #include <map>
+#include <vector>
+#include <utility>
+#include <algorithm>
 
 #include <execinfo.h>
 
@@ -17,6 +20,32 @@ extern "C" {
 //     extern void zfree(void*);
 // #include "zmalloc.h"
 }
+
+static string parse_funname(const string &name) {
+//     return name;
+    size_t first_idx = name.find("(")+1;
+//     size_t end_idx = name.find("+", first_idx-1)-1;
+    size_t end_idx = name.find(")")-1;
+    if (first_idx > end_idx) return "";;
+    return name.substr(
+        first_idx,
+        end_idx);
+
+}
+
+static vector<pair<size_t, string>> GetPreprocessedBacktraces(const std::map<string, size_t> &backtrace2size) {
+    vector<pair<size_t, string>> ret;
+    ret.reserve(backtrace2size.size());
+    for (auto [backtrace, size] : backtrace2size) {
+        ret.push_back(make_pair(size, backtrace));
+    }
+    sort(ret.begin(), ret.end(), [](const pair<size_t, string> &a, const pair<size_t, string> &b) {
+        return a.first > b.first;
+    });
+
+    return ret;
+}
+
 
 static string get_backtrace(void) {
     int nptrs;
@@ -35,8 +64,8 @@ static string get_backtrace(void) {
     }
 
     string ret = "";
-    for (int j = 0; j < nptrs; j++)
-        ret += string(strings[j]);
+    for (int j = 4; j < nptrs; j++)
+        ret += parse_funname(strings[j]);
 
     free(strings);
 

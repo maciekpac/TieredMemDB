@@ -184,7 +184,6 @@ void sdsclear(sds s) {
     sdssetlen(s, 0);
     s[0] = '\0';
 }
-#include "zmalloc.h"
 /* Enlarge the free space at the end of the sds string so that the caller
  * is sure that after calling this function can overwrite up to addlen
  * bytes after the end of the string, plus one more byte for nul term.
@@ -218,7 +217,7 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
 
     hdrlen = sdsHdrSize(type);
     if (oldtype==type) {
-        newsh = zrealloc(sh, hdrlen+newlen+1);
+        newsh = s_realloc(sh, hdrlen+newlen+1);
         if (newsh == NULL) {
             s_free(sh);
             return NULL;
@@ -228,7 +227,7 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
         /* Since the header size changes, need to move the string forward,
          * and can't use realloc */
 //         newsh = s_malloc(hdrlen+newlen+1);
-        newsh = zmalloc_dram(hdrlen+newlen+1);
+        newsh = s_malloc(hdrlen+newlen+1);
         if (newsh == NULL) return NULL;
         memcpy((char*)newsh+hdrlen, s, len+1);
         s_free(sh);
