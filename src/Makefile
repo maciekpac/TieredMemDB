@@ -313,7 +313,7 @@ DEP = $(REDIS_SERVER_OBJ:%.o=%.d) $(REDIS_CLI_OBJ:%.o=%.d) $(REDIS_BENCHMARK_OBJ
 -include $(DEP)
 
 backtrace_tracker.o: backtrace_tracker.cpp .make-prerequisites
-	g++ -c backtrace_tracker.cpp -g
+	g++ -c backtrace_tracker.cpp -g --std=c++20
 
 	# Because the jemalloc.h header is generated as a part of the jemalloc build,
 # building it should complete before building any other object. Instead of
