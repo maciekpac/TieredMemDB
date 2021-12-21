@@ -1348,7 +1348,7 @@ int *getKeysUsingCommandTable(struct redisCommand *cmd,robj **argv, int argc, in
     int count = ((last - cmd->firstkey)+1);
     keys = getKeysTempBuffer;
     if (count > MAX_KEYS_BUFFER)
-        keys = zmalloc(sizeof(int)*count);
+        keys = zmalloc_dram(sizeof(int)*count);
 
     for (j = cmd->firstkey; j <= last; j += cmd->keystep) {
         if (j >= argc) {
@@ -1419,7 +1419,7 @@ int *zunionInterGetKeys(struct redisCommand *cmd, robj **argv, int argc, int *nu
      * argv[3...n] = keys to intersect */
     keys = getKeysTempBuffer;
     if (num+1>MAX_KEYS_BUFFER)
-        keys = zmalloc(sizeof(int)*(num+1));
+        keys = zmalloc_dram(sizeof(int)*(num+1));
 
     /* Add all key positions for argv[3...n] to keys[] */
     for (i = 0; i < num; i++) keys[i] = 3+i;
@@ -1447,7 +1447,7 @@ int *evalGetKeys(struct redisCommand *cmd, robj **argv, int argc, int *numkeys) 
 
     keys = getKeysTempBuffer;
     if (num>MAX_KEYS_BUFFER)
-        keys = zmalloc(sizeof(int)*num);
+        keys = zmalloc_dram(sizeof(int)*num);
 
     *numkeys = num;
 
@@ -1529,7 +1529,7 @@ int *migrateGetKeys(struct redisCommand *cmd, robj **argv, int argc, int *numkey
 
     keys = getKeysTempBuffer;
     if (num>MAX_KEYS_BUFFER)
-        keys = zmalloc(sizeof(int)*num);
+        keys = zmalloc_dram(sizeof(int)*num);
 
     for (i = 0; i < num; i++) keys[i] = first+i;
     *numkeys = num;
@@ -1565,7 +1565,7 @@ int *georadiusGetKeys(struct redisCommand *cmd, robj **argv, int argc, int *numk
      */
     keys = getKeysTempBuffer;
     if (num>MAX_KEYS_BUFFER)
-        keys = zmalloc(sizeof(int) * num);
+        keys = zmalloc_dram(sizeof(int) * num);
 
     /* Add all key positions to keys[] */
     keys[0] = 1;
@@ -1658,7 +1658,7 @@ int *xreadGetKeys(struct redisCommand *cmd, robj **argv, int argc, int *numkeys)
 
     keys = getKeysTempBuffer;
     if (num>MAX_KEYS_BUFFER)
-        keys = zmalloc(sizeof(int) * num);
+        keys = zmalloc_dram(sizeof(int) * num);
 
     for (i = streams_pos+1; i < argc-num; i++) keys[i-streams_pos-1] = i;
     *numkeys = num;
@@ -1676,7 +1676,7 @@ void slotToKeyUpdateKey(sds key, int add) {
     unsigned char *indexed = buf;
 
     server.cluster->slots_keys_count[hashslot] += add ? 1 : -1;
-    if (keylen+2 > 64) indexed = zmalloc(keylen+2);
+    if (keylen+2 > 64) indexed = zmalloc_dram(keylen+2);
     indexed[0] = (hashslot >> 8) & 0xff;
     indexed[1] = hashslot & 0xff;
     memcpy(indexed+2,key,keylen);

@@ -111,7 +111,7 @@ int bg_unlink(const char *filename) {
 
 void createReplicationBacklog(void) {
     serverAssert(server.repl_backlog == NULL);
-    server.repl_backlog = zmalloc(server.repl_backlog_size);
+    server.repl_backlog = zmalloc_dram(server.repl_backlog_size);
     server.repl_backlog_histlen = 0;
     server.repl_backlog_idx = 0;
 
@@ -140,7 +140,7 @@ void resizeReplicationBacklog(long long newsize) {
          * worse often we need to alloc additional space before freeing the
          * old buffer. */
         zfree(server.repl_backlog);
-        server.repl_backlog = zmalloc(server.repl_backlog_size);
+        server.repl_backlog = zmalloc_dram(server.repl_backlog_size);
         server.repl_backlog_histlen = 0;
         server.repl_backlog_idx = 0;
         /* Next byte we have is... the next since the buffer is empty. */
@@ -1127,7 +1127,7 @@ void rdbPipeReadHandler(struct aeEventLoop *eventLoop, int fd, void *clientData,
     UNUSED(eventLoop);
     int i;
     if (!server.rdb_pipe_buff)
-        server.rdb_pipe_buff = zmalloc(PROTO_IOBUF_LEN);
+        server.rdb_pipe_buff = zmalloc_dram(PROTO_IOBUF_LEN);
     serverAssert(server.rdb_pipe_numconns_writing==0);
 
     while (1) {
@@ -1435,7 +1435,7 @@ static int useDisklessLoad() {
  * DBs before socket-loading the new ones. The backups may be restored later
  * or freed by disklessLoadRestoreBackups(). */
 redisDb *disklessLoadMakeBackups(void) {
-    redisDb *backups = zmalloc(sizeof(redisDb)*server.dbnum);
+    redisDb *backups = zmalloc_dram(sizeof(redisDb)*server.dbnum);
     for (int i=0; i<server.dbnum; i++) {
         backups[i] = server.db[i];
         server.db[i].dict = dictCreate(&dbDictType,NULL);

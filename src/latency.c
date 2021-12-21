@@ -102,7 +102,7 @@ void latencyAddSample(const char *event, mstime_t latency) {
 
     /* Create the time series if it does not exist. */
     if (ts == NULL) {
-        ts = zmalloc(sizeof(*ts));
+        ts = zmalloc_dram(sizeof(*ts));
         ts->idx = 0;
         ts->max = 0;
         memset(ts->samples,0,sizeof(ts->samples));

@@ -40,7 +40,7 @@ static list *_listCreate(int on_dram)
 {
     struct list *list;
 
-    list = (on_dram == LIST_DRAM_VARIANT) ? zmalloc_dram(sizeof(*list)) : zmalloc(sizeof(*list));
+    list = (on_dram == LIST_DRAM_VARIANT) ? zmalloc_dram(sizeof(*list)) : zmalloc_dram(sizeof(*list));
     if (list == NULL)
         return NULL;
     list->head = list->tail = NULL;
@@ -124,7 +124,7 @@ void listReleaseDRAM(list *list)
 static list *_listAddNodeHead(list *list, void *value, int on_dram)
 {
     listNode *node;
-    node = (on_dram == LIST_DRAM_VARIANT) ? zmalloc_dram(sizeof(*node)) : zmalloc(sizeof(*node));
+    node = (on_dram == LIST_DRAM_VARIANT) ? zmalloc_dram(sizeof(*node)) : zmalloc_dram(sizeof(*node));
     if (node == NULL)
         return NULL;
     node->value = value;
@@ -173,7 +173,7 @@ list *listAddNodeTail(list *list, void *value)
 {
     listNode *node;
 
-    if ((node = zmalloc(sizeof(*node))) == NULL)
+    if ((node = zmalloc_dram(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;
     if (list->len == 0) {
@@ -192,7 +192,7 @@ list *listAddNodeTail(list *list, void *value)
 list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
     listNode *node;
 
-    if ((node = zmalloc(sizeof(*node))) == NULL)
+    if ((node = zmalloc_dram(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;
     if (after) {
@@ -259,7 +259,7 @@ listIter *listGetIterator(list *list, int direction)
 {
     listIter *iter;
 
-    if ((iter = zmalloc(sizeof(*iter))) == NULL) return NULL;
+    if ((iter = zmalloc_dram(sizeof(*iter))) == NULL) return NULL;
     if (direction == AL_START_HEAD)
         iter->next = list->head;
     else

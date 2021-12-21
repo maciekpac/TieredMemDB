@@ -631,7 +631,7 @@ void ACLAddAllowedSubcommand(user *u, unsigned long id, const char *sub) {
     /* If this is the first subcommand to be configured for
      * this user, we have to allocate the subcommands array. */
     if (u->allowed_subcommands == NULL) {
-        u->allowed_subcommands = zcalloc(USER_COMMAND_BITS_COUNT *
+        u->allowed_subcommands = zcalloc_dram(USER_COMMAND_BITS_COUNT *
                                  sizeof(sds*));
     }
 

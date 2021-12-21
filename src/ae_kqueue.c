@@ -39,10 +39,10 @@ typedef struct aeApiState {
 } aeApiState;
 
 static int aeApiCreate(aeEventLoop *eventLoop) {
-    aeApiState *state = zmalloc(sizeof(aeApiState));
+    aeApiState *state = zmalloc_dram(sizeof(aeApiState));
 
     if (!state) return -1;
-    state->events = zmalloc(sizeof(struct kevent)*eventLoop->setsize);
+    state->events = zmalloc_dram(sizeof(struct kevent)*eventLoop->setsize);
     if (!state->events) {
         zfree(state);
         return -1;

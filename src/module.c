@@ -393,7 +393,7 @@ void RM_FreeServerInfo(RedisModuleCtx *ctx, RedisModuleServerInfoData *data);
  * and in general is taken into account as memory allocated by Redis.
  * You should avoid using malloc(). */
 void *RM_Alloc(size_t bytes) {
-    return zmalloc(bytes);
+    return zmalloc_dram(bytes);
 }
 
 /* Use like calloc(). Memory allocated with this function is reported in
@@ -467,7 +467,7 @@ void *RM_PoolAlloc(RedisModuleCtx *ctx, size_t bytes) {
     if (left < bytes) {
         size_t blocksize = REDISMODULE_POOL_ALLOC_MIN_SIZE;
         if (blocksize < bytes) blocksize = bytes;
-        b = zmalloc(sizeof(*b) + blocksize);
+        b = zmalloc_dram(sizeof(*b) + blocksize);
         b->size = blocksize;
         b->used = 0;
         b->next = ctx->pa_head;
@@ -823,10 +823,10 @@ int RM_CreateCommand(RedisModuleCtx *ctx, const char *name, RedisModuleCmdFunc c
      *
      * Note that we use the Redis command table 'getkeys_proc' in order to
      * pass a reference to the command proxy structure. */
-    cp = zmalloc(sizeof(*cp));
+    cp = zmalloc_dram(sizeof(*cp));
     cp->module = ctx->module;
     cp->func = cmdfunc;
-    cp->rediscmd = zmalloc(sizeof(*rediscmd));
+    cp->rediscmd = zmalloc_dram(sizeof(*rediscmd));
     cp->rediscmd->name = cmdname;
     cp->rediscmd->proc = RedisModuleCommandDispatcher;
     cp->rediscmd->arity = -1;
@@ -851,7 +851,7 @@ void RM_SetModuleAttribs(RedisModuleCtx *ctx, const char *name, int ver, int api
     RedisModule *module;
 
     if (ctx->module != NULL) return;
-    module = zmalloc(sizeof(*module));
+    module = zmalloc_dram(sizeof(*module));
     module->name = sdsnew((char*)name);
     module->ver = ver;
     module->apiver = apiver;
@@ -2006,7 +2006,7 @@ void *RM_OpenKey(RedisModuleCtx *ctx, robj *keyname, int mode) {
     }
 
     /* Setup the key handle. */
-    kp = zmalloc(sizeof(*kp));
+    kp = zmalloc_dram(sizeof(*kp));
     moduleInitKey(kp, ctx, keyname, value, mode);
     autoMemoryAdd(ctx,REDISMODULE_AM_KEY,kp);
     return (void*)kp;
@@ -2952,7 +2952,7 @@ int RM_HashGet(RedisModuleKey *key, int flags, ...) {
  * is processed as needed. Initially we just make sure to set the right
  * reply type, which is extremely cheap to do. */
 RedisModuleCallReply *moduleCreateCallReplyFromProto(RedisModuleCtx *ctx, sds proto) {
-    RedisModuleCallReply *reply = zmalloc(sizeof(*reply));
+    RedisModuleCallReply *reply = zmalloc_dram(sizeof(*reply));
     reply->ctx = ctx;
     reply->proto = proto;
     reply->protolen = sdslen(proto);
@@ -3042,7 +3042,7 @@ void moduleParseCallReply_Array(RedisModuleCallReply *reply) {
         return;
     }
 
-    reply->val.array = zmalloc(sizeof(RedisModuleCallReply)*arraylen);
+    reply->val.array = zmalloc_dram(sizeof(RedisModuleCallReply)*arraylen);
     reply->len = arraylen;
     for (j = 0; j < arraylen; j++) {
         RedisModuleCallReply *ele = reply->val.array+j;
@@ -4155,7 +4155,7 @@ void RM_EmitAOF(RedisModuleIO *io, const char *cmdname, const char *fmt, ...) {
 RedisModuleCtx *RM_GetContextFromIO(RedisModuleIO *io) {
     if (io->ctx) return io->ctx; /* Can't have more than one... */
     RedisModuleCtx ctxtemplate = REDISMODULE_CTX_INIT;
-    io->ctx = zmalloc(sizeof(RedisModuleCtx));
+    io->ctx = zmalloc_dram(sizeof(RedisModuleCtx));
     *(io->ctx) = ctxtemplate;
     io->ctx->module = io->type->module;
     io->ctx->client = NULL;
@@ -4350,7 +4350,7 @@ RedisModuleBlockedClient *moduleBlockClient(RedisModuleCtx *ctx, RedisModuleCmdF
     int islua = c->flags & CLIENT_LUA;
     int ismulti = c->flags & CLIENT_MULTI;
 
-    c->bpop.module_blocked_handle = zmalloc(sizeof(RedisModuleBlockedClient));
+    c->bpop.module_blocked_handle = zmalloc_dram(sizeof(RedisModuleBlockedClient));
     RedisModuleBlockedClient *bc = c->bpop.module_blocked_handle;
     ctx->module->blocked_clients++;
 
@@ -4771,7 +4771,7 @@ int RM_BlockedClientDisconnected(RedisModuleCtx *ctx) {
  * TODO: thread safe contexts do not inherit the blocked client
  * selected database. */
 RedisModuleCtx *RM_GetThreadSafeContext(RedisModuleBlockedClient *bc) {
-    RedisModuleCtx *ctx = zmalloc(sizeof(*ctx));
+    RedisModuleCtx *ctx = zmalloc_dram(sizeof(*ctx));
     RedisModuleCtx empty = REDISMODULE_CTX_INIT;
     memcpy(ctx,&empty,sizeof(empty));
     if (bc) {
@@ -4875,7 +4875,7 @@ void moduleReleaseGIL(void) {
  * See https://redis.io/topics/notifications for more information.
  */
 int RM_SubscribeToKeyspaceEvents(RedisModuleCtx *ctx, int types, RedisModuleNotificationFunc callback) {
-    RedisModuleKeyspaceSubscriber *sub = zmalloc(sizeof(*sub));
+    RedisModuleKeyspaceSubscriber *sub = zmalloc_dram(sizeof(*sub));
     sub->module = ctx->module;
     sub->event_mask = types;
     sub->notify_callback = callback;
@@ -5026,7 +5026,7 @@ void RM_RegisterClusterMessageReceiver(RedisModuleCtx *ctx, uint8_t type, RedisM
 
     /* Not found, let's add it. */
     if (callback) {
-        r = zmalloc(sizeof(*r));
+        r = zmalloc_dram(sizeof(*r));
         r->module_id = module_id;
         r->module = ctx->module;
         r->callback = callback;
@@ -5078,14 +5078,14 @@ char **RM_GetClusterNodesList(RedisModuleCtx *ctx, size_t *numnodes) {
 
     if (!server.cluster_enabled) return NULL;
     size_t count = dictSize(server.cluster->nodes);
-    char **ids = zmalloc((count+1)*REDISMODULE_NODE_ID_LEN);
+    char **ids = zmalloc_dram((count+1)*REDISMODULE_NODE_ID_LEN);
     dictIterator *di = dictGetIterator(server.cluster->nodes);
     dictEntry *de;
     int j = 0;
     while((de = dictNext(di)) != NULL) {
         clusterNode *node = dictGetVal(de);
         if (node->flags & (CLUSTER_NODE_NOADDR|CLUSTER_NODE_HANDSHAKE)) continue;
-        ids[j] = zmalloc(REDISMODULE_NODE_ID_LEN);
+        ids[j] = zmalloc_dram(REDISMODULE_NODE_ID_LEN);
         memcpy(ids[j],node->name,REDISMODULE_NODE_ID_LEN);
         j++;
     }
@@ -5281,7 +5281,7 @@ int moduleTimerHandler(struct aeEventLoop *eventLoop, long long id, void *client
  * the specified function using `data` as argument. The returned timer ID can be
  * used to get information from the timer or to stop it before it fires. */
 RedisModuleTimerID RM_CreateTimer(RedisModuleCtx *ctx, mstime_t period, RedisModuleTimerProc callback, void *data) {
-    RedisModuleTimer *timer = zmalloc(sizeof(*timer));
+    RedisModuleTimer *timer = zmalloc_dram(sizeof(*timer));
     timer->module = ctx->module;
     timer->callback = callback;
     timer->data = data;
@@ -5434,7 +5434,7 @@ static void moduleFreeAuthenticatedClients(RedisModule *module) {
  * wants to invalidate the user to define a new one with different
  * capabilities. */
 RedisModuleUser *RM_CreateModuleUser(const char *name) {
-    RedisModuleUser *new_user = zmalloc(sizeof(RedisModuleUser));
+    RedisModuleUser *new_user = zmalloc_dram(sizeof(RedisModuleUser));
     new_user->user = ACLCreateUnlinkedUser();
 
     /* Free the previous temporarily assigned name to assign the new one */
@@ -5573,7 +5573,7 @@ int RM_DeauthenticateAndCloseClient(RedisModuleCtx *ctx, uint64_t client_id) {
  *    Next / Prev dictionary iterator calls.
  */
 RedisModuleDict *RM_CreateDict(RedisModuleCtx *ctx) {
-    struct RedisModuleDict *d = zmalloc(sizeof(*d));
+    struct RedisModuleDict *d = zmalloc_dram(sizeof(*d));
     d->rax = raxNew();
     if (ctx != NULL) autoMemoryAdd(ctx,REDISMODULE_AM_DICT,d);
     return d;
@@ -5673,7 +5673,7 @@ int RM_DictDel(RedisModuleDict *d, RedisModuleString *key, void *oldval) {
  * REDISMODULE_ERR at the first call, otherwise they'll produce elements.
  */
 RedisModuleDictIter *RM_DictIteratorStartC(RedisModuleDict *d, const char *op, void *key, size_t keylen) {
-    RedisModuleDictIter *di = zmalloc(sizeof(*di));
+    RedisModuleDictIter *di = zmalloc_dram(sizeof(*di));
     di->dict = d;
     raxStart(&di->ri,d->rax);
     raxSeek(&di->ri,op,key,keylen);
@@ -5997,7 +5997,7 @@ sds modulesCollectInfo(sds info, const char *section, int for_crash_report, int 
  * When done, it needs to be freed with RedisModule_FreeServerInfo or with the
  * automatic memory management mechanism if enabled. */
 RedisModuleServerInfoData *RM_GetServerInfo(RedisModuleCtx *ctx, const char *section) {
-    struct RedisModuleServerInfoData *d = zmalloc(sizeof(*d));
+    struct RedisModuleServerInfoData *d = zmalloc_dram(sizeof(*d));
     d->rax = raxNew();
     if (ctx != NULL) autoMemoryAdd(ctx,REDISMODULE_AM_INFO,d);
     sds info = genRedisInfoString(section);
@@ -6146,7 +6146,7 @@ void RM_GetRandomHexChars(char *dst, size_t len) {
  * lifetime. The API relies on the fact that it will always be valid in
  * the future. */
 int RM_ExportSharedAPI(RedisModuleCtx *ctx, const char *apiname, void *func) {
-    RedisModuleSharedAPI *sapi = zmalloc(sizeof(*sapi));
+    RedisModuleSharedAPI *sapi = zmalloc_dram(sizeof(*sapi));
     sapi->module = ctx->module;
     sapi->func = func;
     if (dictAdd(server.sharedapi, (char*)apiname, sapi) != DICT_OK) {
@@ -6323,7 +6323,7 @@ int moduleUnregisterFilters(RedisModule *module) {
  */
 
 RedisModuleCommandFilter *RM_RegisterCommandFilter(RedisModuleCtx *ctx, RedisModuleCommandFilterFunc callback, int flags) {
-    RedisModuleCommandFilter *filter = zmalloc(sizeof(*filter));
+    RedisModuleCommandFilter *filter = zmalloc_dram(sizeof(*filter));
     filter->module = ctx->module;
     filter->callback = callback;
     filter->flags = flags;
@@ -6512,7 +6512,7 @@ static void moduleScanCallback(void *privdata, const dictEntry *de) {
 
 /* Create a new cursor to be used with RedisModule_Scan */
 RedisModuleScanCursor *RM_ScanCursorCreate() {
-    RedisModuleScanCursor* cursor = zmalloc(sizeof(*cursor));
+    RedisModuleScanCursor* cursor = zmalloc_dram(sizeof(*cursor));
     cursor->cursor = 0;
     cursor->done = 0;
     return cursor;
@@ -7072,7 +7072,7 @@ int RM_SubscribeToServerEvent(RedisModuleCtx *ctx, RedisModuleEvent event, Redis
     }
 
     /* No event found, we need to add a new one. */
-    el = zmalloc(sizeof(*el));
+    el = zmalloc_dram(sizeof(*el));
     el->module = ctx->module;
     el->event = event;
     el->callback = callback;

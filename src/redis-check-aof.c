@@ -82,7 +82,7 @@ int readString(FILE *fp, char** target) {
 
     /* Increase length to also consume \r\n */
     len += 2;
-    *target = (char*)zmalloc(len);
+    *target = (char*)zmalloc_dram(len);
     if (!readBytes(fp,*target,len)) {
         return 0;
     }
