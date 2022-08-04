@@ -108,6 +108,7 @@ configEnum memory_alloc_policy_enum[] = {
     {"only-pmem", MEM_POLICY_ONLY_PMEM},
     {"threshold", MEM_POLICY_THRESHOLD},
     {"ratio", MEM_POLICY_RATIO},
+    {"movement", MEM_POLICY_MOVEMENT},
     {NULL, 0}
 };
 

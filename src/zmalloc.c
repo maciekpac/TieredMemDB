@@ -55,6 +55,8 @@ void zlibc_free(void *ptr) {
 #include <pthread.h>
 #include "zmalloc.h"
 #include "atomicvar.h"
+// TODO internal headers should not be included...
+#include "memkind/internal/memkind_memtier.h"
 
 #define UNUSED(x) ((void)(x))
 
@@ -101,13 +103,15 @@ extern void* jemk_realloc(void* ptr, size_t size);
 extern void jemk_free(void* ptr);
 
 static struct memkind* pmem_kind;
+static struct memtier_memory* memory;
+// TODO create pmem_kind from builder
 
 #define malloc(size) jemk_malloc(size);
 #define calloc(count,size) jemk_calloc(count,size)
 #define realloc_dram(ptr,size) jemk_realloc(ptr,size)
-#define realloc_pmem(ptr,size) memkind_realloc(pmem_kind,ptr,size)
+#define realloc_pmem(ptr,size) memtier_realloc(memory,ptr,size)
 #define free_dram(ptr) jemk_free(ptr)
-#define free_pmem(ptr) memkind_free(pmem_kind,ptr)
+#define free_pmem(ptr) memtier_free(ptr)
 
 /* Use Memkind to check if there are any DAX KMEM NUMA nodes in the system */
 int memkind_dax_kmem_all_get_mbind_nodemask(struct memkind *kind,
@@ -132,7 +136,6 @@ static void zmalloc_default_oom(size_t size) {
 }
 
 static void (*zmalloc_oom_handler)(size_t) = zmalloc_default_oom;
-
 #ifndef USE_MEMKIND
 static void zmalloc_pmem_not_available(void) {
     fprintf(stderr, "zmalloc: PMEM function is available only for memkind allocator\n");
@@ -283,11 +286,11 @@ static void zfree_pmem(void *ptr) {
 
 static void *ztrymalloc_usable_pmem(size_t size, size_t *usable) {
     ASSERT_NO_SIZE_OVERFLOW(size);
-    void *ptr = memkind_malloc(pmem_kind, size+PREFIX_SIZE);
+    void *ptr = memtier_malloc(memory, size+PREFIX_SIZE);
 
     if (!ptr) return NULL;
 #ifdef HAVE_MALLOC_SIZE
-    size = zmalloc_size(ptr);
+    size = zmalloc_size_pmem(ptr);
     update_zmalloc_pmem_stat_alloc(size);
     if (usable) *usable = size;
     return ptr;
@@ -341,11 +344,11 @@ static void *zmalloc_usable_pmem(size_t size, size_t *usable) {
 
 static void *ztrycalloc_usable_pmem(size_t size, size_t *usable) {
     ASSERT_NO_SIZE_OVERFLOW(size);
-    void *ptr = memkind_calloc(pmem_kind, 1, size+PREFIX_SIZE);
+    void *ptr = memtier_calloc(memory, 1, size+PREFIX_SIZE);
     if (ptr == NULL) return NULL;
 
 #ifdef HAVE_MALLOC_SIZE
-    size = zmalloc_size(ptr);
+    size = zmalloc_size_pmem(ptr);
     update_zmalloc_pmem_stat_alloc(size);
     if (usable) *usable = size;
     return ptr;
@@ -392,7 +395,7 @@ static void *ztryrealloc_usable_pmem(void *ptr, size_t size, size_t *usable) {
     if (ptr == NULL)
         return ztrymalloc_usable_pmem(size, usable);
 #ifdef HAVE_MALLOC_SIZE
-    oldsize = zmalloc_size(ptr);
+    oldsize = zmalloc_size_pmem(ptr);
     newptr = realloc_pmem(ptr,size);
     if (newptr == NULL) {
         if (usable) *usable = 0;
@@ -400,7 +403,7 @@ static void *ztryrealloc_usable_pmem(void *ptr, size_t size, size_t *usable) {
     }
 
     update_zmalloc_pmem_stat_free(oldsize);
-    size = zmalloc_size(newptr);
+    size = zmalloc_size_pmem(newptr);
     update_zmalloc_pmem_stat_alloc(size);
     if (usable) *usable = size;
     return newptr;
@@ -498,6 +501,7 @@ void *zmalloc_dram(size_t size) {
 
 /* Allocate memory or panic */
 void *zmalloc(size_t size) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? zmalloc_dram(size) : zmalloc_pmem(size);
 }
 
@@ -508,6 +512,7 @@ static void *ztrymalloc_dram(size_t size) {
 
 /* Try allocating memory, and return NULL if failed. */
 void *ztrymalloc(size_t size) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? ztrymalloc_dram(size) : ztrymalloc_pmem(size);
 }
 
@@ -520,6 +525,7 @@ void *zmalloc_usable_dram(size_t size, size_t *usable) {
 /* Allocate memory or panic.
  * '*usable' is set to the usable size if non NULL. */
 void *zmalloc_usable(size_t size, size_t *usable) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? zmalloc_usable_dram(size, usable) : zmalloc_usable_pmem(size, usable);
 }
 
@@ -577,6 +583,7 @@ void *zcalloc_num(size_t num, size_t size) {
 /* Try allocating memory and zero it, and return NULL if failed.
  * '*usable' is set to the usable size if non NULL. */
 void *ztrycalloc_usable(size_t size, size_t *usable) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? ztrycalloc_usable_dram(size, usable) : ztrycalloc_usable_pmem(size, usable);
 }
 
@@ -588,6 +595,7 @@ void *zcalloc_dram(size_t size) {
 
 /* Allocate memory and zero it or panic */
 void *zcalloc(size_t size) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? zcalloc_dram(size) : zcalloc_pmem(size);
 }
 
@@ -598,6 +606,7 @@ void *ztrycalloc_dram(size_t size) {
 
 /* Try allocating memory, and return NULL if failed. */
 void *ztrycalloc(size_t size) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? ztrycalloc_dram(size) : ztrycalloc_pmem(size);
 }
 
@@ -610,6 +619,7 @@ static void *zcalloc_usable_dram(size_t size, size_t *usable) {
 /* Allocate memory or panic.
  * '*usable' is set to the usable size if non NULL. */
 void *zcalloc_usable(size_t size, size_t *usable) {
+    // TOOD not threshold, but new movement kind
     return (size < pmem_threshold) ? zcalloc_usable_dram(size, usable) : zcalloc_usable_pmem(size, usable);
 }
 
@@ -839,6 +849,20 @@ void zmalloc_set_pmem_mode(void) {
     memory_variant = MEMORY_DRAM_PMEM;
 }
 
+void zmalloc_initialize_movement(void) {
+    struct memtier_builder *m_tier_builder =
+        memtier_builder_new(MEMTIER_POLICY_DATA_MOVEMENT);
+    // the ratio is ignored, as of here
+    memtier_builder_add_tier(m_tier_builder, MEMKIND_DEFAULT, 1);
+    memtier_builder_add_tier(m_tier_builder, MEMKIND_DAX_KMEM, 4);
+
+    memory =
+        memtier_builder_construct_memtier_memory(m_tier_builder);
+    // memtier_delete_memtier_memory(m); }); TODO this should be called somewhere
+    memtier_builder_delete(m_tier_builder);
+    // later: memtier_malloc(memory)
+}
+
 /* Get the RSS information in an OS-specific way.
  *
  * WARNING: the function zmalloc_get_rss() is not designed to be fast
@@ -1047,7 +1071,7 @@ int zmalloc_get_allocator_info(size_t *allocated,
 }
 
 void set_jemalloc_bg_thread(int enable) {
-    /* let jemalloc do purging asynchronously, required when there's no traffic 
+    /* let jemalloc do purging asynchronously, required when there's no traffic
      * after flushdb */
     char val = !!enable;
     je_mallctl("background_thread", NULL, 0, &val, 1);

@@ -61,6 +61,8 @@
 #define HAVE_MALLOC_SIZE 1
 extern size_t jemk_malloc_usable_size(void* ptr);
 #define zmalloc_size(p) jemk_malloc_usable_size(p)
+extern size_t memtier_usable_size(void *ptr);
+#define zmalloc_size_pmem(p) memtier_usable_size(p)
 
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
@@ -138,6 +140,7 @@ void zlibc_free(void *ptr);
 void zmadvise_dontneed(void *ptr);
 
 void zmalloc_set_threshold(size_t threshold);
+void zmalloc_initialize_movement(void);
 void zmalloc_set_pmem_mode(void);
 void zmalloc_set_pmem_variant_single_mode(void);
 void zmalloc_set_pmem_variant_multiple_mode(void);
