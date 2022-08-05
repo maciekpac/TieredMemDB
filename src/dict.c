@@ -247,7 +247,7 @@ int dictRehash(dict *d, int n) {
 
     /* Check if we already rehashed the whole table... */
     if (d->ht_used[0] == 0) {
-        zfree(d->ht_table[0]);
+        zfree_dram(d->ht_table[0]);
         /* Copy the new ht onto the old one */
         d->ht_table[0] = d->ht_table[1];
         d->ht_used[0] = d->ht_used[1];

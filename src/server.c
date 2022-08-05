@@ -760,9 +760,9 @@ int clientsCronResizeOutputBuffer(client *c, mstime_t now_ms) {
 
     if (new_buffer_size) {
         oldbuf = c->buf;
-        c->buf = zmalloc_usable(new_buffer_size, &c->buf_usable_size);
+        c->buf = zmalloc_usable_dram(new_buffer_size, &c->buf_usable_size);
         memcpy(c->buf,oldbuf,c->bufpos);
-        zfree(oldbuf);
+        zfree_dram(oldbuf);
     }
     return 0;
 }
@@ -784,7 +784,7 @@ size_t ClientsPeakMemInput[CLIENTS_PEAK_MEM_USAGE_SLOTS] = {0};
 size_t ClientsPeakMemOutput[CLIENTS_PEAK_MEM_USAGE_SLOTS] = {0};
 
 int clientsCronTrackExpansiveClients(client *c, int time_idx) {
-    size_t in_usage = sdsZmallocSize(c->querybuf) + c->argv_len_sum +
+    size_t in_usage = sdsZmallocSizeDram(c->querybuf) + c->argv_len_sum +
 	              (c->argv ? zmalloc_size(c->argv) : 0);
     size_t out_usage = getClientOutputBufferMemoryUsage(c);
 
