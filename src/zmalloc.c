@@ -853,6 +853,40 @@ void zmalloc_set_pmem_mode(void) {
     memory_variant = MEMORY_DRAM_PMEM;
 }
 
+// TODO temp
+
+typedef struct MTTInternalsLimits {
+    /// soft limit of used dram, data movement DRAM -> PMEM will occur when
+    /// surpassed
+    /// @pre must be a multiple of TRACED_PAGESIZE
+    size_t softLimit;
+    /// hard limit of used dram, this limit will not be surpassed by the
+    /// allocator TODO @warning not implemented
+    /// @pre must be a multiple of TRACED_PAGESIZE
+    size_t hardLimit;
+    /// value below which movement from PMEM -> DRAM occurs
+    /// @pre must be a multiple of TRACED_PAGESIZE
+    size_t lowLimit;
+} MTTInternalsLimits;
+
+
+struct memtier_builder {
+    unsigned cfg_size;            // Number of Memory Tier configurations
+    struct memtier_tier_cfg *cfg; // Memory Tier configurations
+    struct memtier_threshold_cfg *thres; // Thresholds configuration for
+    // DYNAMIC_THRESHOLD policy
+    unsigned check_cnt; // Number of memory management operations that has to be
+    // made between ratio checks
+    float trigger;      // Difference between ratios to update threshold
+    float degree;       // % of threshold change in case of update
+    MTTInternalsLimits *mtt_limits;  // MTT ranking limits
+    // builder operations
+    struct memtier_memory *(*create_mem)(struct memtier_builder *builder);
+    int (*update_builder)(struct memtier_builder *builder);
+    int (*ctl_set)(struct memtier_builder *builder, const char *name, const void *val);
+};
+// eof temp
+
 void zmalloc_initialize_movement(void) {
     struct memtier_builder *m_tier_builder =
         memtier_builder_new(MEMTIER_POLICY_DATA_MOVEMENT);
