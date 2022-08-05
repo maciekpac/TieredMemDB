@@ -2635,9 +2635,9 @@ void readQueryFromClient(connection *conn) {
          * need, so using the non-greedy growing. For an initial allocation of
          * the query buffer, we also don't wanna use the greedy growth, in order
          * to avoid collision with the RESIZE_THRESHOLD mechanism. */
-        c->querybuf = sdsMakeRoomForNonGreedy(c->querybuf, readlen);
+        c->querybuf = sdsMakeRoomForNonGreedyDRAM(c->querybuf, readlen);
     } else {
-        c->querybuf = sdsMakeRoomFor(c->querybuf, readlen);
+        c->querybuf = sdsMakeRoomForDRAM(c->querybuf, readlen);
 
         /* Read as much as possible from the socket to save read(2) system calls. */
         readlen = sdsavail(c->querybuf);
