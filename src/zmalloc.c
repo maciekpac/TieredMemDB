@@ -859,6 +859,9 @@ void zmalloc_initialize_movement(void) {
     // the ratio is ignored, as of here
     memtier_builder_add_tier(m_tier_builder, MEMKIND_DEFAULT, 1);
     memtier_builder_add_tier(m_tier_builder, MEMKIND_DAX_KMEM, 4);
+    m_tier_builder->mtt_limits->lowLimit = 1024;
+    m_tier_builder->mtt_limits->softLimit = 2*1024ul*1024ul*1024ul; // 2GB
+    m_tier_builder->mtt_limits->hardLimit = 2*1024ul*1024ul*1024ul + 32*1024ul*1024ul; // 2GB + 32 MB
 
     memory =
         memtier_builder_construct_memtier_memory(m_tier_builder);
