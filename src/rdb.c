@@ -3065,8 +3065,8 @@ int rdbLoadRioWithLoadingCtx(rio *rdb, int rdbflags, rdbSaveInfo *rsi, rdbLoadin
                     (char*)auxkey->ptr);
             }
 
-            decrRefCount(auxkey);
-            decrRefCount(auxval);
+            decrRefCountDRAM(auxkey);
+            decrRefCountDRAM(auxval);
             continue; /* Read type again. */
         } else if (type == RDB_OPCODE_MODULE_AUX) {
             /* Load module data that is not related to the Redis key space.

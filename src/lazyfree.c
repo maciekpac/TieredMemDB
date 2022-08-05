@@ -221,7 +221,7 @@ void freeReplicationBacklogRefMemAsync(list *blocks, rax *index) {
         atomicIncr(lazyfree_objects,listLength(blocks)+raxSize(index));
         bioCreateLazyFreeJob(lazyFreeReplicationBacklogRefMem,2,blocks,index);
     } else {
-        listRelease(blocks);
+        listReleaseDRAM(blocks);
         raxFree(index);
     }
 }

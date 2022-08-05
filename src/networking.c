@@ -45,6 +45,11 @@ int ProcessingEventsWhileBlocked = 0; /* See processEventsWhileBlocked(). */
  * the client output buffer size. */
 size_t sdsZmallocSize(sds s) {
     void *sh = sdsAllocPtr(s);
+    return zmalloc_size_pmem(sh);
+}
+
+size_t sdsZmallocSizeDram(sds s) {
+    void *sh = sdsAllocPtr(s);
     return zmalloc_size(sh);
 }
 
@@ -131,7 +136,7 @@ client *createClient(connection *conn) {
         connSetReadHandler(conn, readQueryFromClient);
         connSetPrivateData(conn, c);
     }
-    c->buf = zmalloc(PROTO_REPLY_CHUNK_BYTES);
+    c->buf = zmalloc_dram(PROTO_REPLY_CHUNK_BYTES);
     selectDb(c,0);
     uint64_t client_id;
     atomicGetIncr(server.next_client_id, client_id, 1);
@@ -1600,7 +1605,7 @@ void freeClient(client *c) {
     }
 
     /* Free the query buffer */
-    sdsfree(c->querybuf);
+    sdsfreedram(c->querybuf);
     c->querybuf = NULL;
 
     /* Deallocate structures used to block on blocking ops. */

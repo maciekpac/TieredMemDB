@@ -231,6 +231,11 @@ void sdsfree(sds s) {
     s_free((char*)s-sdsHdrSize(s[-1]));
 }
 
+void sdsfreedram(sds s) {
+    if (s == NULL) return;
+    s_free_dram((char*)s-sdsHdrSize(s[-1]));
+}
+
 void sdsfreeOptim(sds s) {
     if (s == NULL) return;
     s_free((char*)s-sdsHdrSizeOptim(s));

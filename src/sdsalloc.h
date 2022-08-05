@@ -44,7 +44,8 @@
 #define s_realloc zrealloc
 #define s_trymalloc ztrymalloc
 #define s_tryrealloc ztryrealloc
-#define s_free zfree
+#define s_free zfree_pmem
+#define s_free_dram zfree_dram
 #define s_malloc_usable zmalloc_usable
 #define s_realloc_usable zrealloc_usable
 #define s_trymalloc_usable ztrymalloc_usable

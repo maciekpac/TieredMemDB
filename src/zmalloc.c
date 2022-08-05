@@ -257,7 +257,11 @@ static void zfree_usable_pmem(void *ptr, size_t *usable) {
 
 #else
 static int zmalloc_is_pmem(void * ptr) {
-    if (memory_variant == MEMORY_ONLY_DRAM) return DRAM_LOCATION;
+//     if (memory_variant == MEMORY_ONLY_DRAM) return DRAM_LOCATION;
+    // start of dummy code
+    return (pmem_threshold > 0) ? DRAM_LOCATION : PMEM_LOCATION;
+
+    // eof dummy code
     struct memkind *temp_kind = memkind_detect_kind(ptr);
     return (temp_kind == pmem_kind) ? PMEM_LOCATION : DRAM_LOCATION;
 }
@@ -266,7 +270,7 @@ size_t zmalloc_used_memory(void) {
     return zmalloc_used_dram_memory()+zmalloc_used_pmem_memory();
 }
 
-static void zfree_pmem(void *ptr) {
+void zfree_pmem(void *ptr) {
 #ifndef HAVE_MALLOC_SIZE
     void *realptr;
     size_t oldsize;
@@ -274,7 +278,7 @@ static void zfree_pmem(void *ptr) {
 
     if (ptr == NULL) return;
 #ifdef HAVE_MALLOC_SIZE
-    update_zmalloc_pmem_stat_free(zmalloc_size(ptr));
+    update_zmalloc_pmem_stat_free(zmalloc_size_pmem(ptr));
     free_pmem(ptr);
 #else
     realptr = (char*)ptr-PREFIX_SIZE;
@@ -435,7 +439,7 @@ static void *ztryrealloc_pmem(void *ptr, size_t size) {
     return ptr;
 }
 
-static void *zrealloc_usable_pmem(void *ptr, size_t size, size_t *usable) {
+void *zrealloc_usable_pmem(void *ptr, size_t size, size_t *usable) {
     ptr = ztryrealloc_usable_pmem(ptr, size, usable);
     if (!ptr && size != 0) zmalloc_pmem_oom_handler(size);
     return ptr;
