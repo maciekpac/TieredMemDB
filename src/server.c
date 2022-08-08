@@ -37,6 +37,7 @@
 #include "mt19937-64.h"
 #include "functions.h"
 #include "syscheck.h"
+#include "zmalloc.h"
 
 #include <time.h>
 #include <signal.h>
@@ -6772,7 +6773,10 @@ redisTestProc *getTestProcByName(const char *name) {
 }
 #endif
 
+extern void zmalloc_initialize_movement(void);
+
 int main(int argc, char **argv) {
+    zmalloc_initialize_movement();
     struct timeval tv;
     int j;
     char config_from_stdin = 0;

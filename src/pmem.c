@@ -60,8 +60,9 @@ void pmemInit(void) {
             zmalloc_set_pmem_mode();
             break;
         case MEM_POLICY_MOVEMENT:
-            zmalloc_set_threshold(0);
-            zmalloc_initialize_movement();
+            // moved to src/server.c:main()
+//             zmalloc_set_threshold(0);
+//             zmalloc_initialize_movement();
             break;
         default:
             serverAssert(NULL);

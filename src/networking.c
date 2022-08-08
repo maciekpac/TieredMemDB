@@ -50,7 +50,7 @@ size_t sdsZmallocSize(sds s) {
 
 size_t sdsZmallocSizeDram(sds s) {
     void *sh = sdsAllocPtr(s);
-    return zmalloc_size(sh);
+    return zmalloc_size_dram(sh);
 }
 
 /* Return the amount of memory used by the sds string at object->ptr
@@ -145,7 +145,7 @@ client *createClient(connection *conn) {
     c->conn = conn;
     c->name = NULL;
     c->bufpos = 0;
-    c->buf_usable_size = zmalloc_usable_size(c->buf);
+    c->buf_usable_size = zmalloc_usable_size_dram(c->buf);
     c->buf_peak = c->buf_usable_size;
     c->buf_peak_last_reset_time = server.unixtime;
     c->ref_repl_buf_node = NULL;
@@ -3655,7 +3655,7 @@ size_t getClientMemoryUsage(client *c, size_t *output_buffer_mem_usage) {
     if (output_buffer_mem_usage != NULL)
         *output_buffer_mem_usage = mem;
     mem += sdsZmallocSizeDram(c->querybuf);
-    mem += zmalloc_size(c);
+    mem += zmalloc_size_dram(c);
     mem += c->buf_usable_size;
     /* For efficiency (less work keeping track of the argv memory), it doesn't include the used memory
      * i.e. unused sds space and internal fragmentation, just the string length. but this is enough to

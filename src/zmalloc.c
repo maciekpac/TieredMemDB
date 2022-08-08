@@ -479,7 +479,7 @@ void *ztrymalloc_usable_dram(size_t size, size_t *usable) {
 
     if (!ptr) return NULL;
 #ifdef HAVE_MALLOC_SIZE
-    size = zmalloc_size(ptr);
+    size = zmalloc_size_dram(ptr);
     update_zmalloc_dram_stat_alloc(size);
     if (usable) *usable = size;
     return ptr;
@@ -558,7 +558,7 @@ static void *ztrycalloc_usable_dram(size_t size, size_t *usable) {
     if (ptr == NULL) return NULL;
 
 #ifdef HAVE_MALLOC_SIZE
-    size = zmalloc_size(ptr);
+    size = zmalloc_size_dram(ptr);
     update_zmalloc_dram_stat_alloc(size);
     if (usable) *usable = size;
     return ptr;
@@ -645,7 +645,7 @@ static void *ztryrealloc_usable_dram(void *ptr, size_t size, size_t *usable) {
     if (ptr == NULL)
         return ztrymalloc_usable_dram(size, usable);
 #ifdef HAVE_MALLOC_SIZE
-    oldsize = zmalloc_size(ptr);
+    oldsize = zmalloc_size_dram(ptr);
     newptr = realloc_dram(ptr,size);
     if (newptr == NULL) {
         if (usable) *usable = 0;
@@ -653,7 +653,7 @@ static void *ztryrealloc_usable_dram(void *ptr, size_t size, size_t *usable) {
     }
 
     update_zmalloc_dram_stat_free(oldsize);
-    size = zmalloc_size(newptr);
+    size = zmalloc_size_dram(newptr);
     update_zmalloc_dram_stat_alloc(size);
     if (usable) *usable = size;
     return newptr;
@@ -747,7 +747,7 @@ void zfree_dram(void *ptr) {
 
     if (ptr == NULL) return;
 #ifdef HAVE_MALLOC_SIZE
-    update_zmalloc_dram_stat_free(zmalloc_size(ptr));
+    update_zmalloc_dram_stat_free(zmalloc_size_dram(ptr));
     free_dram(ptr);
 #else
     realptr = (char*)ptr-PREFIX_SIZE;
@@ -905,6 +905,7 @@ void zmalloc_initialize_movement(void) {
     // memtier_delete_memtier_memory(m); }); TODO this should be called somewhere
     memtier_builder_delete(m_tier_builder);
     // later: memtier_malloc(memory)
+    zmalloc_set_threshold(0);
 }
 
 /* Get the RSS information in an OS-specific way.

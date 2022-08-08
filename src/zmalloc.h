@@ -60,9 +60,10 @@
 #include <memkind.h>
 #define HAVE_MALLOC_SIZE 1
 extern size_t jemk_malloc_usable_size(void* ptr);
-#define zmalloc_size(p) jemk_malloc_usable_size(p)
 extern size_t memtier_usable_size(void *ptr);
+#define zmalloc_size_dram(p) jemk_malloc_usable_size(p)
 #define zmalloc_size_pmem(p) memtier_usable_size(p)
+#define zmalloc_size(p) zmalloc_size_pmem(p)
 
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
@@ -164,6 +165,7 @@ size_t zmalloc_size(void *ptr);
 size_t zmalloc_usable_size(void *ptr);
 #else
 #define zmalloc_usable_size(p) zmalloc_size(p)
+#define zmalloc_usable_size_dram(p) zmalloc_size_dram(p)
 #endif
 
 int get_proc_stat_ll(int i, long long *res);
